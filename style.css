@@ -1,0 +1,74 @@
+/* @import url('https://fonts.googleapis.com/css2?family=EB+Garamond&family=Quicksand:wght@500&family=Roboto+Mono&display=swap'); */
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond&family=Quicksand&family=Roboto+Mono&display=swap');
+
+:root {
+    --foreground-color: #111111;
+    --background-color: #f7f7f7;
+}
+
+body {
+    font-family: 'Quicksand', sans-serif;
+    color: var(--foreground-color);
+    background-color: #444444;
+    margin: auto;
+    max-width: 8.5in;
+    font-size: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 20rem;
+    text-align: justify;
+}
+
+div.table-of-contents {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+a.table-of-contents-link {
+    text-decoration: none;
+    color: var(--foreground-color);
+}
+
+li {
+    margin-bottom: 0.5rem;
+}
+
+h1,
+h2,
+h3 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+div.header {
+    text-align: center;
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+}
+
+div.document {
+    background-color: var(--background-color);
+    padding: 1in;
+    box-shadow: black 0px 0px 5px;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.italic {
+    font-style: italic;
+}
+
+div.error {
+    background-color: #FFCCCC;
+    border: 1px solid black;
+    font-family: 'Roboto Mono', monospace;
+    color: black;
+    font-size: 0.8rem;
+    padding: 0.5rem;
+}
+
+div.error div.error-title {
+    background-color: #FF7777;
+    font-weight: bold;
+}
