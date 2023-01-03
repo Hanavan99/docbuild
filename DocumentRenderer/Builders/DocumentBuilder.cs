@@ -12,9 +12,10 @@ namespace DocumentRenderer.Builders
 
             RegisterFactory("document", () => new Document());
             RegisterFactory("section", () => new Section());
-            RegisterFactory("text", () => new Text(""));
+            RegisterFactory("text", () => new Text());
             RegisterFactory("tableofcontents", () => new TableOfContents());
             RegisterFactory("list", () => new List());
+            RegisterFactory("linebreak", () => new LineBreak());
         }
 
         protected readonly Dictionary<string, FactoryDelegate> factories = new();

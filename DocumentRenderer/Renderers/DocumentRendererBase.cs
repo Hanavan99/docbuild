@@ -7,42 +7,41 @@ namespace DocumentRenderer.Renderers
     {
         protected readonly Dictionary<Type, Action<Element>> renderers = new();
 
-        public DocumentRendererBase(int depth, DocumentLocator locator)
+        public DocumentRendererBase(DocumentLocator locator)
         {
-            Depth = depth;
             Locator = locator;
             RegisterRenderers();
         }
 
-        public int Depth { get; set; }
-
         public DocumentLocator Locator { get; private set; }
 
-        public abstract void HandleRenderError(Exception e);
+        public abstract void HandleRenderError(Type type, Exception exception);
 
         public abstract void RegisterRenderers();
 
-        public void Render(Element element, int depthOffset = 0)
+        public void Render(Element element)
         {
-            Depth += depthOffset;
-            renderers[element.GetType()].Invoke(element);
-            Depth -= depthOffset;
+            try
+            {
+                renderers[element.GetType()].Invoke(element);
+            }
+            catch (Exception e)
+            {
+                HandleRenderError(element.GetType(), e);
+            }
         }
 
-        public void Render<T>(T element, int depthOffset = 0) where T : Element
+        public void Render<T>(T element) where T : Element
         {
-            Depth += depthOffset;
-            renderers[typeof(T)].Invoke(element);
-            Depth -= depthOffset;
+            try
+            {
+                renderers[typeof(T)].Invoke(element);
+            }
+            catch (Exception e)
+            {
+                HandleRenderError(typeof(T), e);
+            }
         }
-
-        //public void RenderBase(Element element)
-        //{
-        //    if (element.GetType().BaseType is Type bt && bt != typeof(Element))
-        //    {
-        //        renderers[bt].Invoke(element);
-        //    }
-        //}
 
         public void RegisterRenderer<T>(RenderDelegate<T> renderer) where T : Element
         {

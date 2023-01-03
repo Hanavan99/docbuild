@@ -6,60 +6,61 @@ namespace DocumentRenderer.Renderers
 {
     public class HtmlRenderer : DocumentRendererBase
     {
-        public HtmlRenderer(int depth, DocumentLocator locator, StringBuilder sb) : base(depth, locator)
+
+        public HtmlRenderer(string lineIndentString, int depth, DocumentLocator locator, StringBuilder sb) : base(locator)
         {
+            LineIndentString = lineIndentString;
+            Depth = depth;
             SB = sb;
         }
+        public string LineIndentString { get; private set; }
+        private int Depth { get; set; }
+        private int Inline { get; set; }
 
         private StringBuilder SB { get; set; }
 
-        public void AppendLine(string s)
+        public override void HandleRenderError(Type type, Exception exception)
         {
-            AppendLine(s, 0);
-        }
-
-        public void AppendLine(string s, int depthOffset)
-        {
-            if (Depth + depthOffset >= 0)
-            {
-                for (int i = 0; i < Depth + depthOffset; i++)
-                {
-                    SB.Append("    ");
-                }
-                SB.AppendLine(s);
-            }
-            else
-            {
-                throw new ArgumentException("Depth must be >= 0.");
-            }
-        }
-
-        public override void HandleRenderError(Exception e)
-        {
-            AppendLine($"<div class=\"error\"><div class=\"error-title\"><strong>ERROR:</strong> Failed to render element \"{GetType().Name}\": {e.Message}</div>{e.StackTrace?.Replace("\n", "<br/>")}</div>");
+            Write($"<div class=\"error\"><div class=\"error-title\"><strong>ERROR:</strong> Failed to render element \"{type.Name}\": {exception.Message}</div><div class=\"error-details\">{exception.StackTrace?.Replace("\n", "<br/>")}</div></div>");
         }
 
         public override void RegisterRenderers()
         {
-            RegisterRenderer<Element>((e) => Console.WriteLine($"Rendering element \"{e.GetType().Name}\"."));
+            RegisterRenderer<Element>(e => Console.WriteLine($"Rendering element \"{e.GetType().Name}\"."));
             RegisterRenderer<ContainerElement>(RenderContainerElement);
             RegisterRenderer<Text>(RenderText);
             RegisterRenderer<TableOfContents>(RenderTableOfContents);
             RegisterRenderer<Section>(RenderSection);
             RegisterRenderer<Document>(RenderDocument);
             RegisterRenderer<List>(RenderList);
+            RegisterRenderer<RawText>(RenderRawText);
+            RegisterRenderer<LineBreak>(RenderLineBreak);
+        }
+
+        private void RenderLineBreak(LineBreak element)
+        {
+            Write("<br>");
+        }
+
+        private void RenderRawText(RawText element)
+        {
+            Write(element.Text);
         }
 
         private void RenderList(List element)
         {
-            if (element.ListType == "ordered") AppendLine("<ol>");
+            if (element.ListType == "ordered") Write("<ol>");
+            BeginIndent();
             foreach (Element child in element.Children)
             {
-                AppendLine("<li>", 1);
-                Render(child, 2);
-                AppendLine("</li>", 1);
+                Write("<li>");
+                BeginIndent();
+                Render(child);
+                EndIndent();
+                Write("</li>");
             }
-            if (element.ListType == "ordered") AppendLine("</ol>");
+            EndIndent();
+            if (element.ListType == "ordered") Write("</ol>");
         }
 
         private void RenderContainerElement(ContainerElement element)
@@ -73,65 +74,92 @@ namespace DocumentRenderer.Renderers
 
         private void RenderDocument(Document document)
         {
+            Write("<!DOCTYPE html>");
+            Write("<html>");
+            BeginIndent();
+            Write("<head>");
+            //output.AppendLine("        <link rel=\"stylesheet\" href=\"style.css\">");
+            BeginIndent();
+            if (document.Title != null && document.Title.Trim() != "") Write($"<title>{document.Title.Trim()}</title>");
+            Write("<style>");
+            Write(File.ReadAllText("../../../../style.css"));
+            Write("</style>");
+            EndIndent();
+            Write("</head>");
+            Write("<body>");
+            BeginIndent();
+            Write("<div class=\"document\">");
+            BeginIndent();
             if (document.Title != null)
             {
-                AppendLine("<div class=\"header\">");
-                if (document.Title != null && document.Title.Trim() != "") { AppendLine($"<h1>{document.Title}</h1>", 1); }
-                if (document.Subtitle != null && document.Subtitle.Trim() != "") { AppendLine($"<h2>{document.Subtitle}</h2>", 1); }
-                if (document.ShowDate) { AppendLine($"<span style=\"margin-top: 2rem; display: inline-block;\">{DateTime.Now:MMMM d, yyyy}</span>", 1); }
-                AppendLine("</div>");
+                Write("<div class=\"header\">");
+                BeginIndent();
+                if (document.Title != null && document.Title.Trim() != "") { Write($"<h1>{document.Title}</h1>"); }
+                if (document.Subtitle != null && document.Subtitle.Trim() != "") { Write($"<h2>{document.Subtitle}</h2>"); }
+                if (document.ShowDate) { Write($"<span style=\"margin-top: 2rem; display: inline-block;\">{DateTime.Now:MMMM d, yyyy}</span>"); }
+                EndIndent();
+                Write("</div>");
             }
             Render<ContainerElement>(document);
+            EndIndent();
+            Write("</div>");
+            EndIndent();
+            Write("</body>");
+            EndIndent();
+            Write("</html>");
         }
 
         private void RenderSection(Section section)
         {
-            AppendLine($"<div id=\"{section.Location?.Identifier}\">");
+            Write($"<div id=\"{section.Location?.Identifier}\">");
+            BeginIndent();
             if (section.Title != null)
             {
                 switch (section.Location?.Depth)
                 {
                     case 1:
-                        AppendLine($"<h2>{section.Location?.DisplayName}&nbsp;&nbsp;&nbsp;{section.Title}</h2>", 1);
+                        Write($"<h2>{section.Location?.DisplayName}&nbsp;&nbsp;&nbsp;{section.Title}</h2>");
                         break;
                     case 2:
-                        AppendLine($"<h3>{section.Location?.DisplayName}&nbsp;&nbsp;&nbsp;{section.Title}</h3>", 1);
+                        Write($"<h3>{section.Location?.DisplayName}&nbsp;&nbsp;&nbsp;{section.Title}</h3>");
                         break;
                     case 3:
-                        AppendLine($"<h4>{section.Location?.DisplayName}&nbsp;&nbsp;&nbsp;{section.Title}</h4>", 1);
+                        Write($"<h4>{section.Location?.DisplayName}&nbsp;&nbsp;&nbsp;{section.Title}</h4>");
                         break;
                 }
             }
-            Render<ContainerElement>(section, 1);
-            AppendLine("</div>");
+            Render<ContainerElement>(section);
+            EndIndent();
+            Write("</div>");
         }
 
         private void RenderText(Text text)
         {
-            string cssClass = "";
-            if (text.IsBold) cssClass += "bold";
-            if (text.IsItalic) cssClass += "italic";
+            string cssClass = text.Styles.Trim();
+            //if (text.IsBold) cssClass += "bold ";
+            //if (text.IsItalic) cssClass += "italic ";
+            //if (text.IsCode) cssClass += "code ";
+
+            BeginInline();
             if (cssClass.Length > 0)
             {
-                AppendLine($"<span class=\"{cssClass}\">");
+                Write($"<span class=\"{cssClass.Trim()}\">");
             }
             else
             {
-                AppendLine("<span>");
+                Write("<span>");
             }
 
-            if (text.TextContent.Trim() != "")
-            {
-                AppendLine(text.TextContent.Trim(), 1);
-            }
-            Render<ContainerElement>(text, 1);
-            AppendLine("</span>");
+            Render<ContainerElement>(text);
+            Write("</span>");
+            EndInline();
         }
 
         private void RenderTableOfContents(TableOfContents contents)
         {
-            AppendLine("<div class=\"table-of-contents\">");
-            AppendLine("<h2>Contents</h2>", 1);
+            Write("<div class=\"table-of-contents\">");
+            BeginIndent();
+            Write("<h2>Contents</h2>");
             foreach (Tuple<Element, DocumentLocation> loc2 in Locator)
             {
                 string? label = null;
@@ -139,14 +167,71 @@ namespace DocumentRenderer.Renderers
                 DocumentLocation loc = loc2.Item2;
                 if (loc.Depth == 1)
                 {
-                    AppendLine($"<div style=\"font-weight: bold;\"><a class=\"table-of-contents-link\" href=\"#{loc.Identifier}\">{loc.DisplayName}&nbsp;&nbsp;{label}</a></div>", 1);
+                    Write($"<div style=\"font-weight: bold;\"><a class=\"table-of-contents-link\" href=\"#{loc.Identifier}\">{loc.DisplayName}&nbsp;&nbsp;{label}</a></div>");
                 }
                 else
                 {
-                    AppendLine($"<div style=\"margin-left: {loc.Depth - 1}rem;\"><a class=\"table-of-contents-link\" href=\"#{loc.Identifier}\">{loc.DisplayName}&nbsp;&nbsp;{label}</a></div>", 1);
+                    Write($"<div style=\"margin-left: {loc.Depth - 1}rem;\"><a class=\"table-of-contents-link\" href=\"#{loc.Identifier}\">{loc.DisplayName}&nbsp;&nbsp;{label}</a></div>");
                 }
             }
-            AppendLine("</div>");
+            EndIndent();
+            Write("</div>");
         }
+
+        #region Helper Methods
+
+        public void BeginIndent()
+        {
+            Depth++;
+        }
+
+        public void EndIndent()
+        {
+            Depth = Math.Max(Depth - 1, 0);
+        }
+
+        public void BeginInline()
+        {
+            if (Inline == 0)
+            {
+                //SB.AppendLine();
+                SB.Append(CreateIndentString(Depth));
+            }
+            Inline++;
+        }
+
+        public void EndInline()
+        {
+            Inline = Math.Max(Inline - 1, 0);
+            if (Inline == 0)
+            {
+                SB.AppendLine();
+            }
+        }
+
+        public void Write(string? s)
+        {
+            if (Inline == 0)
+            {
+                SB.Append(CreateIndentString(Depth));
+                SB.AppendLine(s);
+            }
+            else
+            {
+                SB.Append(s);
+            }
+        }
+
+        private string CreateIndentString(int depth)
+        {
+            StringBuilder sb = new StringBuilder();
+            while (depth > 0)
+            {
+                sb.Append(LineIndentString);
+                depth--;
+            }
+            return sb.ToString();
+        }
+        #endregion
     }
 }

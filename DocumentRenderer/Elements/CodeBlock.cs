@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace DocumentRenderer.Elements
 {
-    public interface IContainerElement
+    public class CodeBlock
     {
-        ICollection<Element> Children { get; }
     }
 }

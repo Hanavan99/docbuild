@@ -1,5 +1,6 @@
 ﻿using DocumentRenderer.Builders;
 using DocumentRenderer.Renderers;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 namespace DocumentRenderer.Elements
@@ -31,7 +32,9 @@ namespace DocumentRenderer.Elements
                 }
                 else if (child is XmlText textElement)
                 {
-                    Children.Add(new Text(textElement.Value ?? ""));
+                    string text = textElement.Value ?? "";
+                    text = Regex.Replace(text, "\\A\\s|\\s+|\\s\\z", " ");
+                    Children.Add(new RawText(text ?? ""));
                 }
                 else
                 {

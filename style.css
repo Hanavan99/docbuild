@@ -25,7 +25,12 @@ div.table-of-contents {
 
 a.table-of-contents-link {
     text-decoration: none;
-    color: var(--foreground-color);
+    color: #550000;
+}
+
+a.table-of-contents-link:hover {
+    transform: translateX(1rem);
+    transition: transform ease-in-out 1s;
 }
 
 li {
@@ -60,15 +65,40 @@ div.document {
 }
 
 div.error {
-    background-color: #FFCCCC;
+    background-color: #ffCCCC;
     border: 1px solid black;
     font-family: 'Roboto Mono', monospace;
     color: black;
     font-size: 0.8rem;
-    padding: 0.5rem;
+    text-align: left;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-div.error div.error-title {
-    background-color: #FF7777;
+div.error-title {
+    background-color: #ff7777;
     font-weight: bold;
+    padding: 0.1rem 0.3rem;
+}
+
+div.error-details {
+    padding: 0.5rem;
+    word-wrap: break-word;
+    font-size: 0.6rem;
+}
+
+.code {
+    font-family: 'Roboto Mono', monospace;
+    background-color: rgba(128, 128, 128, 0.2);
+    padding: 0.05rem 0.2rem;
+    color: #770077;
+    border-radius: 0.2rem;
+    font-size: 0.75rem;
+    font-style: normal;
+}
+
+.literal {
+    color: #0033ff;
+    font-weight: bold;
+    font-size: 0.95rem;
 }

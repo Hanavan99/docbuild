@@ -12,65 +12,47 @@ namespace DocumentRenderer
         public static void Main(string[] args)
         {
             Console.WriteLine("Hello, World!");
+            string path = @"C:\Users\hkuhn\OneDrive - EARP Distribution\Documents\DocBuild";
+            FileSystemWatcher fsw = new FileSystemWatcher(path, "*.xml");
+            fsw.Changed += (sender, e) =>
+            {
+                try
+                {
+                    Thread.Sleep(1000);
+                    GenerateDocument(e.FullPath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
+            };
+            fsw.EnableRaisingEvents = true;
+            Thread.Sleep(int.MaxValue);
+        }
+
+        private static void GenerateDocument(string path)
+        {
             XmlDocument doc = new XmlDocument();
-            doc.Load(new FileStream("../../../../example.xml", FileMode.Open));
+            using FileStream fs = new FileStream(path, FileMode.Open);
+            doc.Load(fs);
             StringBuilder output = new StringBuilder();
 
             DocumentLocator locator = new DocumentLocator();
-            HtmlRenderer renderer = new HtmlRenderer(3, locator, output);
+            HtmlRenderer renderer = new HtmlRenderer("    ", 0, locator, output);
             DocumentBuilder builder = new DocumentBuilder(renderer);
-
 
             if (doc.DocumentElement is XmlElement root && root.Name == "document")
             {
                 Element e = builder.Create(root.Name);
                 e.Build(builder, root);
                 e.PreRender(locator);
-                output.AppendLine("<!DOCTYPE html>");
-                output.AppendLine("<html>");
-                output.AppendLine("    <head>");
-                output.AppendLine("        <link rel=\"stylesheet\" href=\"style.css\">");
-                output.AppendLine("    </head>");
-                output.AppendLine("    <body>");
-                output.AppendLine("        <div class=\"document\">");
                 renderer.Render(e);
-                output.AppendLine("        </div>");
-                output.AppendLine("    </body>");
-                output.AppendLine("</html>");
             }
             else
             {
                 throw new Exception("Document root element must be <document>.");
             }
-            File.WriteAllText("../../../../output.html", output.ToString());
-
-
-            //[XmlInclude(typeof(Document))]
-            //[XmlInclude(typeof(Section))]
-            //[XmlInclude(typeof(TableOfContents))]
-            //public abstract class DocElement
-            //{
-            //    [XmlArray]
-            //    public DocElement[] Children { get; set; }
-            //}
-
-            //[XmlRoot("document")]
-            //public class Document : DocElement
-            //{
-
-            //}
-
-            //[XmlType("section")]
-            //public class Section : DocElement
-            //{
-
-            //}
-
-            //[XmlType("tableofcontents")]
-            //public class TableOfContents : DocElement
-            //{
-
-            //}
+            File.WriteAllText(Path.Combine(Path.GetDirectoryName(path) ?? ".", Path.GetFileNameWithoutExtension(path) + ".html"), output.ToString());
         }
     }
 }
